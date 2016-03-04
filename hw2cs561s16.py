@@ -5,6 +5,12 @@ fact_list = []
 input_query = []
 std_facts = []
 OPRS = ['&&', '=>']
+brk_flag =False
+
+prd_query = []
+
+x_y = []
+parent_predicate = []
 
 output = open('output.txt', 'w')
 
@@ -239,13 +245,17 @@ def subst(theta, first):
         return new_first
 
 
-parent_predicate = []
+
 
 
 def unify(x, y, subst = {}):
+    global x_y
+
+
     # print "Unifying"
     # print x
     # print y
+
     if subst is None:
         # print "Failure"
         # failure is denoted by None (default is {})
@@ -268,6 +278,9 @@ def unify(x, y, subst = {}):
         # print y
         return unify_vars(y, x, subst)
     elif isinstance(x, Predicate) and isinstance(y, Predicate):
+        del x_y[:]
+        x_y.append(x)
+        x_y.append(y)
         # print 'X and Y PREDICATE'
         # print x
         # print y
@@ -285,10 +298,12 @@ def unify(x, y, subst = {}):
         # does not match any case, so no substitution
         print '\n-----------------------------------------------------------------------'
         print 'UNIFYING'
-        print parent_predicate[0]
-        print parent_predicate[1]
+        print x_y[0]
+        print x_y[1]
+
         print '-----------------------------------------------------------------------\n'
-        write_false(parent_predicate)
+        # write_false()
+        # write_false()
         return None
 
 
@@ -304,9 +319,11 @@ def unify_vars(var, x, subst):
         return subst_copy
 
 
-def write_false(pp):
+def write_false():
+    global x_y
+
     output.write('False: ')
-    output.write(str(pp[1]))
+    output.write(str(x_y[1]))
     output.write('\n')
 
 
@@ -329,16 +346,29 @@ def fol_bc_ask(KB, query):
 
 def fol_bc_or(KB, goal, theta):
     global parent_predicate
+    global brk_flag
 
     goal_rules = KB.rules[goal.name]
-
+    ask_flag = True
     for rule in goal_rules:
-        write_ask(goal, theta)
+
+        if '=>' in rule:
+            write_ask(goal, theta)
+            ask_flag = True
+        elif ask_flag:
+            ask_flag = False
+            write_ask(goal, theta)
         lhs, rhs = standardize_vbls(rule)
-        parent_predicate = [rhs[0], goal]
+
         for theta1 in fol_bc_and(KB, lhs, unify(rhs[0], goal, theta)):
-            write_true(goal, theta1)
+            brk_flag = write_true(goal, theta1)
+            # if brk_flag:
+            #     break
             yield theta1
+
+    # ask_flag = True
+    # Best place now
+    # write_false()
 
 
 def fol_bc_and(KB, goals, theta):
@@ -358,6 +388,9 @@ def fol_bc_and(KB, goals, theta):
         for theta1 in fol_bc_or(KB, subst(theta, first), theta):
             for theta2 in fol_bc_and(KB, rest, theta1):
                 yield theta2
+        write_false()
+
+
 
 
 def write_ask(goal, theta):
@@ -387,6 +420,8 @@ def write_ask(goal, theta):
 
 
 def write_true(goal, theta):
+    global input_query
+    # Need to cut off here if goal matches input query
     output.write('True: ' + goal.name + '(' )
     str_repr = goal.args[0]
     if str_repr[0].islower():
@@ -401,6 +436,37 @@ def write_true(goal, theta):
             output.write(', ' + arg)
             # print arg
     output.write(')\n')
+
+    pq = prd_query[0]
+
+    if pq.name == goal.name:
+        print pq
+        print goal
+        cut_off_flag = True
+        for i in range(len(pq.args)):
+            if is_variable(pq.args[i]):
+                if theta.get(pq.args[i]):
+                    print 'Variable assigned', pq.args[i]
+                    print theta.get(pq.args[i])
+                    continue
+                else:   # value unassigned
+                    cut_off_flag = False
+                    break
+            else:   # each constant must match
+                if pq.args[i] == goal.args[i]:
+                    print 'MATCH CONST'
+                    print pq.args[i], goal.args[i]
+                    cut_off_flag = True
+                else:
+                    cut_off_flag = False
+                    print 'MISMATCH CONST'
+                    print pq.args[i], goal.args[i]
+                    break
+        if cut_off_flag:
+            output.write('True')
+            quit()
+            return True
+    return False
     # print str_repr
     # print theta1
 
@@ -410,6 +476,7 @@ def main():
     global input_query
     global std_facts
     global output
+    global prd_query
     prd_sentences = []
 
     file_name = sys.argv[2]
@@ -494,23 +561,23 @@ def main():
     else:
         output.write('True')
 
-    print '^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^'
-    print check
-    print '^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^'
-    if final_theta is None:
-        print "False"
+    # print '^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^'
+    # print check
+    # print '^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^'
+    # if final_theta is None:
+    #     print "False"
+    #
+    # else:
+    #     # print final_theta
+    #     print '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!TRUE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1'
+    #     for k in final_theta:
+    #         print 'Key:',
+    #         print k
 
-    else:
-        # print final_theta
-        print '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!TRUE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1'
-        for k in final_theta:
-            print 'Key:',
-            print k
 
-
-    print '\n\n\n********************************STD SEN**************************'
-    for sen in std_facts:
-        print sen
+    # print '\n\n\n********************************STD SEN**************************'
+    # for sen in std_facts:
+    #     print sen
 
     output.close()
 
