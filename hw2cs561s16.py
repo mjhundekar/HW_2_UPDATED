@@ -296,12 +296,12 @@ def unify(x, y, subst = {}):
         return unify(x[1:], y[1:], unify(x[0], y[0], subst))
     else:
         # does not match any case, so no substitution
-        print '\n-----------------------------------------------------------------------'
-        print 'UNIFYING'
-        print x_y[0]
-        print x_y[1]
+        # print '\n-----------------------------------------------------------------------'
+        # print 'UNIFYING'
+        # print x_y[0]
+        # print x_y[1]
 
-        print '-----------------------------------------------------------------------\n'
+        # print '-----------------------------------------------------------------------\n'
         # write_false()
         # write_false()
         return None
@@ -351,14 +351,33 @@ def fol_bc_or(KB, goal, theta):
     goal_rules = KB.rules[goal.name]
     ask_flag = True
     for rule in goal_rules:
+        # print '.................................................'
+        # print rule
+        # print '.................................................'
+        lhs, rhs = standardize_vbls(rule)
 
-        if '=>' in rule:
+
+
+        if lhs: # its a rule
             write_ask(goal, theta)
             ask_flag = True
         elif ask_flag:
-            ask_flag = False
+            print '.................................................'
+            print goal
+            print theta
+            print '.................................................'
             write_ask(goal, theta)
-        lhs, rhs = standardize_vbls(rule)
+            ask_flag = False
+
+        # else:   # its a fact
+        #
+        #     for arg in goal.args:
+        #         if is_variable(arg):
+        #             ask_flag = True
+        #             break
+        #     if ask_flag:
+        #          write_ask(goal, theta)
+        #          ask_flag = False
 
         for theta1 in fol_bc_and(KB, lhs, unify(rhs[0], goal, theta)):
             brk_flag = write_true(goal, theta1)
@@ -394,6 +413,8 @@ def fol_bc_and(KB, goals, theta):
 
 
 def write_ask(goal, theta):
+    # return false if goal cannot be satisfied in facts
+    # return true if goal can be satisfied in
     output.write('Ask: ' + goal.name + '(')
     str_repr = goal.args[0]
     if str_repr[0].islower():
@@ -417,6 +438,8 @@ def write_ask(goal, theta):
             output.write(', ' + arg)
             # print arg
     output.write(')\n')
+
+    # if ()
 
 
 def write_true(goal, theta):
