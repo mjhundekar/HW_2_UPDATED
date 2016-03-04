@@ -574,6 +574,8 @@ def main():
 
     print '%%%%%%%%%%%'
     print prd_query[0]
+    # for case 4 loop over all queries in prd_query and change the global query being evaluated
+
     final_theta = fol_bc_ask(KB, prd_query[0])
 
 
