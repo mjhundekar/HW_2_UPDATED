@@ -368,7 +368,7 @@ def fol_bc_or(KB, goal, theta):
             print '.................................................'
             write_ask(goal, theta)
             ask_flag = False
-
+        #
         # else:   # its a fact
         #
         #     for arg in goal.args:
