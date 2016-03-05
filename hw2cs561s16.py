@@ -1,5 +1,6 @@
 import sys
 import collections
+import copy
 
 fact_list = []
 input_query = []
@@ -10,7 +11,7 @@ brk_flag =False
 i_prd_query = []
 i_query_len = 0
 curr_goal_len = 0
-
+ask_flag = True
 x_y = []
 parent_predicate = []
 
@@ -119,7 +120,6 @@ def construct_kb(prd_sentences):
     KB = KnowledgeBase()
 
     for prd in prd_sentences:
-        print prd
         if '=>' in prd:     # this is a rule
             implication_pos = prd.index('=>')
             lhs = prd[:implication_pos]
@@ -202,7 +202,8 @@ def subst(theta, first):
 
 def unify(x, y, subst = {}):
     global x_y
-
+    global ask_flag
+    global brk_flag
     if subst is None:
         # failure is denoted by None (default is {})
         return None
@@ -227,6 +228,8 @@ def unify(x, y, subst = {}):
         return unify(x[1:], y[1:], unify(x[0], y[0], subst))
     else:
         # does not match any case, so no substitution
+        # ask_flag = write_false()
+        brk_flag = True
         return None
 
 
@@ -237,12 +240,15 @@ def unify_vars(var, x, subst):
     elif x in subst:
         return unify(var, subst[x], subst)
     else:
-        subst_copy = subst.copy()
+        # subst_copy = subst.copy()
+        subst_copy = copy.deepcopy(subst)
         subst_copy[var] = x
         return subst_copy
 
 
 def write_false():
+    # global ask_flag
+    global brk_flag
     global x_y
     write_flag = True
     for arg in x_y[1].args:
@@ -250,15 +256,17 @@ def write_false():
             write_flag = False
             break
     if write_flag:
-        output.write('False: ')
-        output.write(str(x_y[1]))
-        output.write('\n')
-
+        if brk_flag:
+            output.write('False: ')
+            output.write(str(x_y[1]))
+            output.write('\n')
+            brk_flag = False
+            return True
+    else:
+        return False
 
 
 def is_variable(item):
-    # print 'Checking if variable:'
-    # print item
     if isinstance(item, Predicate):
         return False
     elif isinstance(item, list):
@@ -275,28 +283,45 @@ def fol_bc_ask(KB, query):
 def fol_bc_or(KB, goal, theta):
     global parent_predicate
     global brk_flag
-    print goal
+    global ask_flag
+    global x_y
+
     goal_rules = KB.rules[goal.name]
     ask_flag = True
+
+    print '\n\n'
+    print 'Inside FOL-BC-OR'
+    print goal
+    print goal_rules
     for rule in goal_rules:
         lhs, rhs = standardize_vbls(rule)
 
         if lhs: # its a rule
             write_ask(goal, theta)
             ask_flag = True
+
         elif ask_flag:
             write_ask(goal, theta)
             ask_flag = False
-
         for theta1 in fol_bc_and(KB, lhs, unify(rhs[0], goal, theta)):
             brk_flag = write_true(goal, theta1)
             yield theta1
-
     # Best place now
-    write_false()
+    print 'Writing false'
+    print goal
+    print theta
+    x_y[1] = goal
+    ask_flag = write_false()
 
 
 def fol_bc_and(KB, goals, theta):
+    global ask_flag
+
+    print '\n\n'
+    print 'Inside FOL-BC-AND'
+    print goals
+
+
     if theta is None:
         pass
 
@@ -310,11 +335,13 @@ def fol_bc_and(KB, goals, theta):
             for theta2 in fol_bc_and(KB, rest, theta1):
                 yield theta2
         # write_false()
+        # ask_flag = write_false()
 
 
 def write_ask(goal, theta):
     # return false if goal cannot be satisfied in facts
     # return true if goal can be satisfied in
+
     output.write('Ask: ' + goal.name + '(')
     str_repr = goal.args[0]
     if str_repr[0].islower():
@@ -336,7 +363,6 @@ def write_ask(goal, theta):
                 output.write(str_repr)
         else:
             output.write(', ' + arg)
-            # print arg
     output.write(')\n')
 
 
@@ -344,6 +370,7 @@ def write_true(goal, theta):
     global input_query
     global curr_goal_len
     global i_query_len
+    global ask_flag
     # Need to cut off here if goal matches input query
     output.write('True: ' + goal.name + '(' )
     str_repr = goal.args[0]
@@ -357,7 +384,6 @@ def write_true(goal, theta):
             output.write(', ' + theta.get(arg))
         else:
             output.write(', ' + arg)
-            # print arg
     output.write(')\n')
 
     pq = i_prd_query
@@ -426,25 +452,6 @@ def main():
             quit()
     if check:
         output.write('True')
-
-
-
-    # for q in prd_query:
-    #     print 'Asking??????????????????????????????????????????????????????????????????????????????????????????????'
-    #     i_prd_query = q
-    #     final_theta = fol_bc_ask(KB, q)
-    #
-    #
-    #     print '\n\n\n********************************FINAL THETA**************************'
-    #     check = [x for x in final_theta]
-    #     if check == []:
-    #         output.write("False")
-    #         break
-    # # else:
-    # #     output.write('True')
-    # output.write('True')
-    #
-    # output.close()
 
     output = open('output.txt', 'r')
     lines = output.readlines()
