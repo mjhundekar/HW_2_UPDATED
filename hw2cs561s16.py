@@ -244,10 +244,15 @@ def unify_vars(var, x, subst):
 
 def write_false():
     global x_y
-
-    output.write('False: ')
-    output.write(str(x_y[1]))
-    output.write('\n')
+    write_flag = True
+    for arg in x_y[1].args:
+        if is_variable(arg):
+            write_flag = False
+            break
+    if write_flag:
+        output.write('False: ')
+        output.write(str(x_y[1]))
+        output.write('\n')
 
 
 
