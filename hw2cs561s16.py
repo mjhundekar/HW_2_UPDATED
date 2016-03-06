@@ -7,7 +7,7 @@ input_query = []
 std_facts = []
 OPRS = ['&&', '=>']
 brk_flag =False
-
+prev_log = ''
 i_prd_query = []
 i_query_len = 0
 curr_goal_len = 0
@@ -250,7 +250,13 @@ def write_false():
     # global ask_flag
     global brk_flag
     global x_y
+    global prev_log
     write_flag = True
+    #
+    # if not prev_log == "Ask":
+    #     prev_log = "False"
+    #     return False
+
     for arg in x_y[1].args:
         if is_variable(arg):
             write_flag = False
@@ -285,6 +291,7 @@ def fol_bc_or(KB, goal, theta):
     global brk_flag
     global ask_flag
     global x_y
+    global prev_log
 
     goal_rules = KB.rules[goal.name]
     ask_flag = True
@@ -310,6 +317,7 @@ def fol_bc_or(KB, goal, theta):
     print 'Writing false'
     print goal
     print theta
+    print prev_log
     x_y[1] = goal
     ask_flag = write_false()
 
@@ -341,8 +349,10 @@ def fol_bc_and(KB, goals, theta):
 def write_ask(goal, theta):
     # return false if goal cannot be satisfied in facts
     # return true if goal can be satisfied in
+    global prev_log
 
     output.write('Ask: ' + goal.name + '(')
+    prev_log = "Ask"
     str_repr = goal.args[0]
     if str_repr[0].islower():
         if str_repr in theta.keys():
@@ -371,6 +381,8 @@ def write_true(goal, theta):
     global curr_goal_len
     global i_query_len
     global ask_flag
+    global prev_log
+    prev_log = "True"
     # Need to cut off here if goal matches input query
     output.write('True: ' + goal.name + '(' )
     str_repr = goal.args[0]
@@ -448,6 +460,9 @@ def main():
             check = [x for x in i]
             break
         if check == []:
+            output.write("False: ")
+            output.write(str(q))
+            output.write('\n')
             output.write("False")
             quit()
     if check:
