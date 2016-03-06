@@ -253,9 +253,9 @@ def write_false():
     global prev_log
     write_flag = True
     #
-    # if not prev_log == "Ask":
-    #     prev_log = "False"
-    #     return False
+    if not prev_log == "Ask":
+        prev_log = "False"
+        # return False
 
     for arg in x_y[1].args:
         if is_variable(arg):
@@ -265,6 +265,7 @@ def write_false():
         if brk_flag:
             output.write('False: ')
             output.write(str(x_y[1]))
+            prev_log = 'False: ' + str(x_y[1])
             output.write('\n')
             brk_flag = False
             return True
@@ -452,21 +453,25 @@ def main():
     # for case 4 loop over all queries in prd_query and change the global query being evaluated
     flg_file = True
 
-
+    temp_q_len = 0
     check = []
     for q in prd_query:
+        temp_q_len += 1
         check = []
         for i in fol_bc_ask(KB, q):
             check = [x for x in i]
             break
         if check == []:
-            output.write("False: ")
-            output.write(str(q))
-            output.write('\n')
+            temp_str = 'False: ' + str(q)
+            if prev_log != temp_str:
+                output.write("False: ")
+                output.write(str(q))
+                output.write('\n')
+
             output.write("False")
             quit()
-    if check:
-        output.write('True')
+        if check and temp_q_len == i_query_len:
+            output.write('True')
 
     output = open('output.txt', 'r')
     lines = output.readlines()
