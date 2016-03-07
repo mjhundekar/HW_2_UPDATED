@@ -286,6 +286,7 @@ def fol_bc_ask(KB, query):
     theta = collections.OrderedDict()
     return fol_bc_or(KB, query, theta)
 
+inter_goal_len = 0
 
 def fol_bc_or(KB, goal, theta):
     global parent_predicate
@@ -293,34 +294,59 @@ def fol_bc_or(KB, goal, theta):
     global ask_flag
     global x_y
     global prev_log
+    global inter_goal_len
 
     goal_rules = KB.rules[goal.name]
     ask_flag = True
-
+    inter_goal_len = len(goal_rules)
     print '\n\n'
     print 'Inside FOL-BC-OR'
     print goal
     print goal_rules
     for rule in goal_rules:
+
         lhs, rhs = standardize_vbls(rule)
 
         if lhs: # its a rule
             write_ask(goal, theta)
-            ask_flag = True
+            # inter_goal_len -= 1
+            # ask_flag = True
 
-        elif ask_flag:
-            write_ask(goal, theta)
+        elif ask_flag and inter_goal_len >= 0:
             ask_flag = False
+            write_ask(goal, theta)
+            # inter_goal_len -= 1
+
+            # temp = unify(rhs[0], goal, theta)
+            # if temp is not None:
+            #     # write_ask(goal, theta)
+            #     print goal
+            #     print inter_goal_len, '.......'
+            #     ask_flag = False
+        inter_goal_len -= 1
         for theta1 in fol_bc_and(KB, lhs, unify(rhs[0], goal, theta)):
+            # temp = unify(rhs[0], goal, theta)
+            # if temp is not None:
+            #     if ask_flag:
+            #         write_ask(goal, theta)
+            #         # ask_flag = False
+            #     # print goal
+                # print inter_goal_len, '.......'
             brk_flag = write_true(goal, theta1)
             yield theta1
+
     # Best place now
-    print 'Writing false'
-    print goal
-    print theta
-    print prev_log
+
+    # print theta
+    # print prev_log
     x_y[1] = goal
-    ask_flag = write_false()
+    if inter_goal_len >= 0:
+        print 'Writing false'
+        print goal
+        print inter_goal_len
+        ask_flag = write_false()
+
+        # inter_goal_len -= 1
 
 
 def fol_bc_and(KB, goals, theta):
@@ -351,6 +377,7 @@ def write_ask(goal, theta):
     # return false if goal cannot be satisfied in facts
     # return true if goal can be satisfied in
     global prev_log
+    global inter_goal_len
 
     output.write('Ask: ' + goal.name + '(')
     prev_log = "Ask"
@@ -441,6 +468,8 @@ def main():
     file_name = sys.argv[2]
     process_input(file_name)
 
+    # process_input("sample05.txt")
+
     prd_query = convert_to_predicate(input_query)
     for f in fact_list:
         sen = convert_to_predicate(f)
@@ -459,16 +488,63 @@ def main():
         temp_q_len += 1
         check = []
         for i in fol_bc_ask(KB, q):
+            # output.write('\n\n\nTest\n')
             check = [x for x in i]
             break
         if check == []:
             temp_str = 'False: ' + str(q)
             if prev_log != temp_str:
+                output.close()
+
+                output = open('output.txt', 'r')
+                lines = output.readlines()
+                output.close()
+
+                output = open('output.txt', 'w')
+                output.writelines([item for item in lines[:-1]])
                 output.write("False: ")
                 output.write(str(q))
                 output.write('\n')
 
             output.write("False")
+            output.close()
+            # output = open('output.txt', 'r')
+            # lines = output.readlines()
+            # output.close()
+            #
+            # write = open('output.txt', 'w')
+
+
+            # for i in range(len(lines)-2):
+            #     curr_line_list = lines[i].split()
+            #     next_line_list = lines[i+1].split()
+            #     # line_list.pop(0)
+            #     curr_res = curr_line_list.pop(0)
+            #     next_res = next_line_list.pop(0)
+            #     if curr_res == next_res:  # only iin case of ask, ask
+            #         print lines[i]
+            #         write.write(str(lines[i]))
+            #         write.write(lines[i+1])
+            #         i += 2
+            #     else:
+            #         print curr_line_list[0]
+            #         print next_line_list[0]
+            #         curr_fun = curr_line_list[0][:curr_line_list[0].index('(')]
+            #         next_fun = next_line_list[0][:next_line_list[0].index('(')]
+            #         if curr_fun == next_fun:
+            #             print lines[i]
+            #             print lines[i+1]
+            #             write.write(str(lines[i]))
+            #             write.write(str(lines[i+1]))
+            #             i += 2
+            #         else:
+            #             print lines[i+1]
+            #             write.write(str(lines[i+1]))
+            #             i += 2
+            # write.write('False')
+
+
+
             quit()
         if check and temp_q_len == i_query_len:
             output.write('True')
@@ -479,6 +555,11 @@ def main():
 
     write = open('output.txt', 'w')
     # write = open('traverse_log.txt', 'w')
+    for line in lines:
+        line_list = line.split()
+        line_list.pop(0)
+        print line_list
+
     write.writelines([item for item in lines[:-1]])
     item = lines[-1].rstrip()
     write.write(item)
