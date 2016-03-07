@@ -305,7 +305,7 @@ def fol_bc_or(KB, goal, theta):
     print goal_rules
     for rule in goal_rules:
 
-        lhs, rhs = standardize_vbls(rule)
+        lhs, rhs = standardize_vbls(rule, theta)
 
         if lhs: # its a rule
             write_ask(goal, theta)
@@ -527,43 +527,6 @@ def main():
 
             output.write("False")
             output.close()
-            # output = open('output.txt', 'r')
-            # lines = output.readlines()
-            # output.close()
-            #
-            # write = open('output.txt', 'w')
-
-
-            # for i in range(len(lines)-2):
-            #     curr_line_list = lines[i].split()
-            #     next_line_list = lines[i+1].split()
-            #     # line_list.pop(0)
-            #     curr_res = curr_line_list.pop(0)
-            #     next_res = next_line_list.pop(0)
-            #     if curr_res == next_res:  # only iin case of ask, ask
-            #         print lines[i]
-            #         write.write(str(lines[i]))
-            #         write.write(lines[i+1])
-            #         i += 2
-            #     else:
-            #         print curr_line_list[0]
-            #         print next_line_list[0]
-            #         curr_fun = curr_line_list[0][:curr_line_list[0].index('(')]
-            #         next_fun = next_line_list[0][:next_line_list[0].index('(')]
-            #         if curr_fun == next_fun:
-            #             print lines[i]
-            #             print lines[i+1]
-            #             write.write(str(lines[i]))
-            #             write.write(str(lines[i+1]))
-            #             i += 2
-            #         else:
-            #             print lines[i+1]
-            #             write.write(str(lines[i+1]))
-            #             i += 2
-            # write.write('False')
-
-
-
             quit()
         if check and temp_q_len == i_query_len:
             output.write('True')
