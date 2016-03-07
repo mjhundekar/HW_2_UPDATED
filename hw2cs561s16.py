@@ -501,7 +501,26 @@ def main():
                 output.close()
 
                 output = open('output.txt', 'w')
-                output.writelines([item for item in lines[:-1]])
+                i = 0
+                last_line_flag = True
+
+                while(True):
+                    last_line = lines[i-1]
+                    last_list = last_line.split()
+                    print '\n\n________________________'
+                    print last_list[0]
+
+                    if last_list[0] == "Ask:":
+                        i -= 1
+                        last_line_flag = False
+                    else:
+                        break
+                if i == 0:
+                    last_line_flag = True
+                    i = -1
+                output.writelines([item for item in lines[:i]])
+                if last_line_flag:
+                    output.write(lines[-1])
                 output.write("False: ")
                 output.write(str(q))
                 output.write('\n')
