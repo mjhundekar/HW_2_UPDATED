@@ -422,9 +422,8 @@ def main():
         temp_q_len += 1
         check = []
         for i in fol_bc_ask(KB, q):
-            check = [x for x in i]
-            if prev_log == 'True':
-                check.append(prev_log)
+            if i is not None:
+                check.append('True')
             break
         if check and temp_q_len == i_query_len:
             output.write('True')
