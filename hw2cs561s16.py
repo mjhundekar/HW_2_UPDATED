@@ -269,6 +269,7 @@ ask_flag_1 = False
 
 file_log = ''
 
+
 def fol_bc_or(KB, goal, theta):
     global parent_predicate
     global brk_flag
@@ -304,56 +305,19 @@ def fol_bc_or(KB, goal, theta):
             write_ask(goal, theta)
             ask_flag_1 = True
 
-        # if lhs: # its a rule
-        #     write_ask(goal, theta)
-        #     # inter_goal_len -= 1
-        #     # ask_flag = True
-        #
-        # elif ask_flag and inter_goal_len >= 0:
-        #     ask_flag = False
-        #     write_ask(goal, theta)
-            # inter_goal_len -= 1
-
-            # temp = unify(rhs[0], goal, theta)
-            # if temp is not None:
-            #     # write_ask(goal, theta)
-            #     print goal
-            #     print inter_goal_len, '.......'
-            #     ask_flag = False
-        # inter_goal_len -= 1
-
         if temp_flag:
             for theta1 in fol_bc_and(KB, lhs, unify(rhs[0], goal, theta)):
-                # temp = unify(rhs[0], goal, theta)
-                # if temp is not None:
-                #     if ask_flag:
-                #         write_ask(goal, theta)
-                #         # ask_flag = False
-                #     # print goal
-                    # print inter_goal_len, '.......'
-                # output.write("True: " + str(goal) + '\n')
                 file_log = 'True'
                 brk_flag = write_true(goal, theta1)
                 yield theta1
 
-    # Best place now
-
-    # print theta
-    # print prev_log
     x_y[1] = goal
     if not ask_flag_1 and file_log != 'False':
         ask_flag = write_false()
         ask_flag_1 = True
         file_log = 'False'
-        # output.write("False: " + str(goal) + '\n')
 
-    # if inter_goal_len >= 0:
-    #     print 'Writing false'
-    #     print goal
-    #     print inter_goal_len
-    #     ask_flag = write_false()
 
-        # inter_goal_len -= 1
 
 
 def fol_bc_and(KB, goals, theta):
@@ -475,23 +439,6 @@ def main():
             output.write("False")
             output.close()
             quit()
-
-
-    # output = open('output.txt', 'r')
-    # lines = output.readlines()
-    # output.close()
-    #
-    # write = open('output.txt', 'w')
-    # # write = open('traverse_log.txt', 'w')
-    # for line in lines:
-    #     line_list = line.split()
-    #     line_list.pop(0)
-    #     print line_list
-    #
-    # write.writelines([item for item in lines[:-1]])
-    # item = lines[-1].rstrip()
-    # write.write(item)
-    # write.close()
 
 
 if __name__ == '__main__':
