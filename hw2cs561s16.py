@@ -202,8 +202,6 @@ def subst(theta, first):
 
 def unify(x, y, subst = {}):
     global x_y
-    global ask_flag
-    global brk_flag
     if subst is None:
         # failure is denoted by None (default is {})
         return None
@@ -228,8 +226,6 @@ def unify(x, y, subst = {}):
         return unify(x[1:], y[1:], unify(x[0], y[0], subst))
     else:
         # does not match any case, so no substitution
-        # ask_flag = write_false()
-        brk_flag = True
         return None
 
 
@@ -247,30 +243,11 @@ def unify_vars(var, x, subst):
 
 
 def write_false():
-    # global ask_flag
-    global brk_flag
-    global x_y
     global prev_log
-    write_flag = True
-    #
-    if not prev_log == "Ask":
-        prev_log = "False"
-        # return False
-
-    for arg in x_y[1].args:
-        if is_variable(arg):
-            write_flag = False
-            break
-    if write_flag:
-        if brk_flag:
-            output.write('False: ')
-            output.write(str(x_y[1]))
-            prev_log = 'False: ' + str(x_y[1])
-            output.write('\n')
-            brk_flag = False
-            return True
-    else:
-        return False
+    output.write('False: ')
+    output.write(str(x_y[1]))
+    prev_log = 'False: ' + str(x_y[1])
+    output.write('\n')
 
 
 def is_variable(item):
@@ -288,6 +265,10 @@ def fol_bc_ask(KB, query):
 
 inter_goal_len = 0
 
+ask_flag_1 = False
+
+file_log = ''
+
 def fol_bc_or(KB, goal, theta):
     global parent_predicate
     global brk_flag
@@ -295,26 +276,42 @@ def fol_bc_or(KB, goal, theta):
     global x_y
     global prev_log
     global inter_goal_len
+    global file_log
+    global ask_flag_1
 
+    file_log = 'Ask'
     goal_rules = KB.rules[goal.name]
     ask_flag = True
     inter_goal_len = len(goal_rules)
-    print '\n\n'
-    print 'Inside FOL-BC-OR'
-    print goal
-    print goal_rules
+
+    write_ask(goal, theta)
+    # output.write("Ask: " + str(goal)+'\n')
+    file_log = 'Ask'
+    ask_flag_1 = False
     for rule in goal_rules:
 
-        lhs, rhs = standardize_vbls(rule, theta)
+        lhs, rhs = standardize_vbls(rule)
 
-        if lhs: # its a rule
-            write_ask(goal, theta)
-            # inter_goal_len -= 1
-            # ask_flag = True
+        temp_flag = True
 
-        elif ask_flag and inter_goal_len >= 0:
-            ask_flag = False
+        tmp_theta = unify(rhs[0], goal)
+        if tmp_theta is None:
+            temp_flag = False
+
+        if ask_flag_1 and temp_flag:
+            # output.write("Ask: " + str(goal)+'\n')
+            file_log = 'Ask'
             write_ask(goal, theta)
+            ask_flag_1 = True
+
+        # if lhs: # its a rule
+        #     write_ask(goal, theta)
+        #     # inter_goal_len -= 1
+        #     # ask_flag = True
+        #
+        # elif ask_flag and inter_goal_len >= 0:
+        #     ask_flag = False
+        #     write_ask(goal, theta)
             # inter_goal_len -= 1
 
             # temp = unify(rhs[0], goal, theta)
@@ -323,39 +320,44 @@ def fol_bc_or(KB, goal, theta):
             #     print goal
             #     print inter_goal_len, '.......'
             #     ask_flag = False
-        inter_goal_len -= 1
-        for theta1 in fol_bc_and(KB, lhs, unify(rhs[0], goal, theta)):
-            # temp = unify(rhs[0], goal, theta)
-            # if temp is not None:
-            #     if ask_flag:
-            #         write_ask(goal, theta)
-            #         # ask_flag = False
-            #     # print goal
-                # print inter_goal_len, '.......'
-            brk_flag = write_true(goal, theta1)
-            yield theta1
+        # inter_goal_len -= 1
+
+        if temp_flag:
+            for theta1 in fol_bc_and(KB, lhs, unify(rhs[0], goal, theta)):
+                # temp = unify(rhs[0], goal, theta)
+                # if temp is not None:
+                #     if ask_flag:
+                #         write_ask(goal, theta)
+                #         # ask_flag = False
+                #     # print goal
+                    # print inter_goal_len, '.......'
+                # output.write("True: " + str(goal) + '\n')
+                file_log = 'True'
+                brk_flag = write_true(goal, theta1)
+                yield theta1
 
     # Best place now
 
     # print theta
     # print prev_log
     x_y[1] = goal
-    if inter_goal_len >= 0:
-        print 'Writing false'
-        print goal
-        print inter_goal_len
+    if not ask_flag_1 and file_log != 'False':
         ask_flag = write_false()
+        ask_flag_1 = True
+        file_log = 'False'
+        # output.write("False: " + str(goal) + '\n')
+
+    # if inter_goal_len >= 0:
+    #     print 'Writing false'
+    #     print goal
+    #     print inter_goal_len
+    #     ask_flag = write_false()
 
         # inter_goal_len -= 1
 
 
 def fol_bc_and(KB, goals, theta):
     global ask_flag
-
-    print '\n\n'
-    print 'Inside FOL-BC-AND'
-    print goals
-
 
     if theta is None:
         pass
@@ -369,15 +371,12 @@ def fol_bc_and(KB, goals, theta):
         for theta1 in fol_bc_or(KB, subst(theta, first), theta):
             for theta2 in fol_bc_and(KB, rest, theta1):
                 yield theta2
-        # write_false()
-        # ask_flag = write_false()
 
 
 def write_ask(goal, theta):
     # return false if goal cannot be satisfied in facts
     # return true if goal can be satisfied in
     global prev_log
-    global inter_goal_len
 
     output.write('Ask: ' + goal.name + '(')
     prev_log = "Ask"
@@ -426,35 +425,6 @@ def write_true(goal, theta):
             output.write(', ' + arg)
     output.write(')\n')
 
-    pq = i_prd_query
-    if pq and goal:
-        if pq.name == goal.name:
-            cut_off_flag = True
-            for i in range(len(pq.args)):
-                if is_variable(pq.args[i]):
-                    if theta.get(pq.args[i]):
-                        continue
-                    else:   # value unassigned
-                        cut_off_flag = False
-                        # return False
-                        break
-                else:   # each constant must match
-                    if pq.args[i] == goal.args[i]:
-                        cut_off_flag = True
-                    else:
-                        cut_off_flag = False
-                        # return False
-                        break
-            if cut_off_flag:
-                # return True
-                curr_goal_len += 1
-                if curr_goal_len == i_query_len: # All goals matched exit
-                    output.write('True')
-                    # quit()
-                    return True
-                return True
-    return False
-
 
 def main():
     global fact_list
@@ -488,39 +458,16 @@ def main():
         temp_q_len += 1
         check = []
         for i in fol_bc_ask(KB, q):
-            # output.write('\n\n\nTest\n')
             check = [x for x in i]
+            if prev_log == 'True':
+                check.append(prev_log)
             break
-        if check == []:
+        if check and temp_q_len == i_query_len:
+            output.write('True')
+            output.close()
+        elif check == []:
             temp_str = 'False: ' + str(q)
             if prev_log != temp_str:
-                output.close()
-
-                output = open('output.txt', 'r')
-                lines = output.readlines()
-                output.close()
-
-                output = open('output.txt', 'w')
-                i = 0
-                last_line_flag = True
-
-                while(True):
-                    last_line = lines[i-1]
-                    last_list = last_line.split()
-                    print '\n\n________________________'
-                    print last_list[0]
-
-                    if last_list[0] == "Ask:":
-                        i -= 1
-                        last_line_flag = False
-                    else:
-                        break
-                if i == 0:
-                    last_line_flag = True
-                    i = -1
-                output.writelines([item for item in lines[:i]])
-                if last_line_flag:
-                    output.write(lines[-1])
                 output.write("False: ")
                 output.write(str(q))
                 output.write('\n')
@@ -528,24 +475,23 @@ def main():
             output.write("False")
             output.close()
             quit()
-        if check and temp_q_len == i_query_len:
-            output.write('True')
 
-    output = open('output.txt', 'r')
-    lines = output.readlines()
-    output.close()
 
-    write = open('output.txt', 'w')
-    # write = open('traverse_log.txt', 'w')
-    for line in lines:
-        line_list = line.split()
-        line_list.pop(0)
-        print line_list
-
-    write.writelines([item for item in lines[:-1]])
-    item = lines[-1].rstrip()
-    write.write(item)
-    write.close()
+    # output = open('output.txt', 'r')
+    # lines = output.readlines()
+    # output.close()
+    #
+    # write = open('output.txt', 'w')
+    # # write = open('traverse_log.txt', 'w')
+    # for line in lines:
+    #     line_list = line.split()
+    #     line_list.pop(0)
+    #     print line_list
+    #
+    # write.writelines([item for item in lines[:-1]])
+    # item = lines[-1].rstrip()
+    # write.write(item)
+    # write.close()
 
 
 if __name__ == '__main__':
